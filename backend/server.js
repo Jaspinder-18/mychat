@@ -15,6 +15,12 @@ const app = express();
 app.use(cors({ origin: '*' }));
 app.use(express.json());
 
+// Request Logger
+app.use((req, res, next) => {
+    console.log(`[API] ${req.method} ${req.url}`);
+    next();
+});
+
 app.use('/api/users', userRoutes);
 app.use('/api/chat', chatRoutes);
 
