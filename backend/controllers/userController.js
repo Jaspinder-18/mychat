@@ -1,0 +1,248 @@
+const asyncHandler = require('express-async-handler');
+const User = require('../models/userModel');
+const generateToken = require('../utils/generateToken');
+const bcrypt = require('bcryptjs');
+
+// @desc    Register a new user
+// @route   POST /api/users
+// @access  Public
+const registerUser = asyncHandler(async (req, res) => {
+    const { name, email, password } = req.body;
+
+    if (!name || !email || !password) {
+        res.status(400);
+        throw new Error('Please fill all fields');
+    }
+
+    const userExists = await User.findOne({ email });
+
+    if (userExists) {
+        res.status(400);
+        throw new Error('User already exists');
+    }
+
+    const user = await User.create({
+        name,
+        email,
+        password,
+    });
+
+    if (user) {
+        res.status(201).json({
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            token: generateToken(user._id),
+        });
+    } else {
+        res.status(400);
+        throw new Error('Invalid user data');
+    }
+});
+
+// @desc    Auth user & get token
+// @route   POST /api/users/login
+// @access  Public
+const authUser = asyncHandler(async (req, res) => {
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ email });
+
+    if (user && (await user.matchPassword(password))) {
+        res.json({
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            token: generateToken(user._id),
+        });
+    } else {
+        res.status(401);
+        throw new Error('Invalid email or password');
+    }
+});
+
+// @desc    Verify user for password reset (email only)
+// @route   POST /api/users/forgot-password-verify
+// @access  Public
+const verifyForgotPassword = asyncHandler(async (req, res) => {
+    const { email } = req.body;
+
+    if (!email) {
+        res.status(400);
+        throw new Error('Email is required');
+    }
+
+    const user = await User.findOne({ email });
+
+    if (user) {
+        res.json({
+            message: 'User verified',
+            userId: user._id
+        });
+    } else {
+        res.status(404);
+        throw new Error('No account found with this email');
+    }
+});
+
+
+// @desc    Reset password
+// @route   PUT /api/users/reset-password
+// @access  Public
+const resetPassword = asyncHandler(async (req, res) => {
+    const { userId, newPassword } = req.body;
+
+    if (!userId || !newPassword) {
+        res.status(400);
+        throw new Error('Missing required fields');
+    }
+
+    const user = await User.findById(userId);
+
+    if (user) {
+        user.password = newPassword;
+        await user.save();
+        res.json({ message: 'Password updated successfully' });
+    } else {
+        res.status(404);
+        throw new Error('User not found');
+    }
+});
+
+
+// @desc    Search users
+// @route   GET /api/users/search
+// @access  Private
+const searchUsers = asyncHandler(async (req, res) => {
+    const keyword = req.query.search
+        ? {
+            $or: [
+                { name: { $regex: req.query.search, $options: 'i' } },
+                { email: { $regex: req.query.search, $options: 'i' } },
+            ],
+        }
+        : {};
+
+    const query = {
+        ...keyword,
+        _id: { $ne: req.user._id }
+    };
+    const users = await User.find(query).select('-password');
+    res.send(users);
+});
+
+// @desc    Send Friend Request
+// @route   POST /api/users/friend-request
+// @access  Private
+const sendFriendRequest = asyncHandler(async (req, res) => {
+    const { receiverId } = req.body;
+
+    const sender = await User.findById(req.user._id);
+    const receiver = await User.findById(receiverId);
+
+    if (!receiver) {
+        res.status(404);
+        throw new Error('User not found');
+    }
+
+    // Check if already friends
+    if (sender.friends.some(id => id.toString() === receiverId)) {
+        res.status(400);
+        throw new Error('Already friends');
+    }
+
+    // Check if request already sent
+    if (receiver.friendRequestsReceived.some(id => id.toString() === sender._id.toString())) {
+        res.status(400);
+        throw new Error('Friend request already sent');
+    }
+
+    // Check if they already sent you a request (Cross-request check)
+    if (sender.friendRequestsReceived.some(id => id.toString() === receiverId)) {
+        res.status(400);
+        throw new Error('This user has already sent you a request. Please accept it in your Requests tab.');
+    }
+
+    receiver.friendRequestsReceived.push(sender._id);
+    sender.friendRequestsSent.push(receiver._id);
+
+    await receiver.save();
+    await sender.save();
+
+    res.json({ message: 'Friend request sent' });
+});
+
+// @desc    Respond to Friend Request
+// @route   POST /api/users/friend-request/respond
+// @access  Private
+const respondToFriendRequest = asyncHandler(async (req, res) => {
+    const { senderId, action } = req.body; // action: 'accept' or 'reject'
+
+    const user = await User.findById(req.user._id);
+    const sender = await User.findById(senderId);
+
+    if (!sender) {
+        res.status(404);
+        throw new Error('Sender not found');
+    }
+
+    if (!user.friendRequestsReceived.some(id => id.toString() === senderId)) {
+        res.status(400);
+        throw new Error('No friend request from this user');
+    }
+
+    // Remove from requests (on both sides)
+    user.friendRequestsReceived = user.friendRequestsReceived.filter(id => id.toString() !== senderId);
+    sender.friendRequestsSent = sender.friendRequestsSent.filter(id => id.toString() !== user._id.toString());
+
+    // Also remove any inverse request if it exists (Crucial Fix for duplicates)
+    user.friendRequestsSent = user.friendRequestsSent.filter(id => id.toString() !== senderId);
+    sender.friendRequestsReceived = sender.friendRequestsReceived.filter(id => id.toString() !== user._id.toString());
+
+    if (action === 'accept') {
+        // Prevent duplicate entries in friends list
+        if (!user.friends.some(id => id.toString() === senderId)) {
+            user.friends.push(senderId);
+        }
+        if (!sender.friends.some(id => id.toString() === user._id.toString())) {
+            sender.friends.push(user._id);
+        }
+
+        await sender.save();
+        await user.save();
+        res.json({ message: 'Friend request accepted' });
+    } else {
+        await sender.save();
+        await user.save();
+        res.json({ message: 'Friend request rejected' });
+    }
+});
+
+// @desc    Get Friends
+// @route   GET /api/users/friends
+// @access  Private
+const getFriends = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user._id).populate('friends', '-password');
+    res.json(user.friends);
+});
+
+// @desc    Get Friend Requests
+// @route   GET /api/users/friend-requests
+// @access  Private
+const getFriendRequests = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user._id).populate('friendRequestsReceived', '-password');
+    res.json(user.friendRequestsReceived);
+});
+
+
+module.exports = {
+    registerUser,
+    authUser,
+    searchUsers,
+    verifyForgotPassword,
+    resetPassword,
+    sendFriendRequest,
+    respondToFriendRequest,
+    getFriends,
+    getFriendRequests
+};
