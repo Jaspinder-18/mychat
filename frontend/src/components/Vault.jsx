@@ -1,17 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FaTrash, FaPlus, FaLock, FaTimes, FaCloudUploadAlt, FaPlayCircle, FaImage } from 'react-icons/fa';
+import { FaTrash, FaPlus, FaLock, FaTimes, FaCloudUploadAlt, FaPlayCircle, FaPaperPlane, FaDownload } from 'react-icons/fa';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useChatState } from '../context/ChatProvider';
 import { API_BASE_URL } from '../config';
 
-const Vault = ({ isOpen, onClose }) => {
+const Vault = ({ isOpen, onClose, onSendToChat }) => {
     const { user } = useChatState();
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [passcode, setPasscode] = useState('');
     const [loading, setLoading] = useState(false);
     const [media, setMedia] = useState([]);
     const [uploading, setUploading] = useState(false);
+    const [selectedItem, setSelectedItem] = useState(null); // For full screen preview
     const fileInputRef = useRef(null);
 
     const VAULT_PASSCODE = '1809';
@@ -78,15 +79,26 @@ const Vault = ({ isOpen, onClose }) => {
         }
     };
 
-    const handleDelete = async (publicId, type) => {
+    const handleDelete = async (publicId, type, e) => {
+        e?.stopPropagation();
         if (!window.confirm("Are you sure you want to delete this?")) return;
         try {
             const config = { headers: { Authorization: `Bearer ${user.token}` } };
             await axios.delete(`${API_BASE_URL}/api/vault/${publicId}?type=${type}`, config);
             toast.success("Item deleted");
             setMedia(media.filter(m => m.public_id !== publicId));
+            if (selectedItem?.public_id === publicId) setSelectedItem(null);
         } catch (error) {
             toast.error("Delete failed");
+        }
+    };
+
+    const handleSend = (item) => {
+        if (onSendToChat) {
+            onSendToChat(item.secure_url, item.type);
+            onClose();
+        } else {
+            toast.info("Open a chat first to send media");
         }
     };
 
@@ -94,9 +106,10 @@ const Vault = ({ isOpen, onClose }) => {
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-xl animate-fade-in">
+            {/* Close Vault Btn */}
             <button
                 onClick={onClose}
-                className="absolute top-6 right-6 text-white/50 hover:text-white transition-colors"
+                className="absolute top-6 right-6 text-white/50 hover:text-white transition-colors z-[110]"
             >
                 <FaTimes size={24} />
             </button>
@@ -131,12 +144,12 @@ const Vault = ({ isOpen, onClose }) => {
                     </div>
                 </div>
             ) : (
-                <div className="w-full h-full flex flex-col p-6 max-w-4xl">
+                <div className="w-full h-full flex flex-col p-6 max-w-5xl">
                     <div className="flex items-center justify-between mb-8 mt-4">
                         <div>
                             <h2 className="text-2xl font-black text-white tracking-tight">Vault Gallery</h2>
-                            <p className="text-white/40 text-xs font-bold uppercase tracking-widest mt-1">
-                                {media.length} Items Found
+                            <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest mt-1">
+                                {media.length} Secure Items
                             </p>
                         </div>
                         <div className="flex space-x-3">
@@ -146,7 +159,7 @@ const Vault = ({ isOpen, onClose }) => {
                                 className="flex items-center space-x-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-bold transition-all shadow-lg active:scale-95 disabled:opacity-50"
                             >
                                 {uploading ? <div className="animate-spin h-4 w-4 border-2 border-white/30 border-t-white rounded-full" /> : <FaPlus />}
-                                <span>{uploading ? 'Uploading...' : 'Add Media'}</span>
+                                <span className="hidden sm:inline">{uploading ? 'Uploading...' : 'Add Media'}</span>
                             </button>
                             <input
                                 type="file"
@@ -162,48 +175,120 @@ const Vault = ({ isOpen, onClose }) => {
                         {loading ? (
                             <div className="flex flex-col items-center justify-center h-64 space-y-4">
                                 <div className="animate-spin h-10 w-10 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full" />
-                                <p className="text-white/30 text-xs font-bold uppercase tracking-widest">Loading encrypted data...</p>
+                                <p className="text-white/30 text-xs font-bold uppercase tracking-widest">Accessing Encrypted Storage...</p>
                             </div>
                         ) : media.length === 0 ? (
                             <div className="flex flex-col items-center justify-center h-64 text-center">
                                 <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6">
                                     <FaCloudUploadAlt className="text-white/20 text-3xl" />
                                 </div>
-                                <p className="text-white/40 text-sm">Vault is empty.</p>
-                                <button onClick={() => fileInputRef.current.click()} className="text-indigo-400 text-xs font-bold uppercase mt-2 hover:underline">Upload your first memory</button>
+                                <p className="text-white/40 text-sm font-medium">Your vault is currently empty.</p>
+                                <button onClick={() => fileInputRef.current.click()} className="text-indigo-400 text-xs font-bold uppercase mt-4 hover:underline tracking-widest">Securely Upload Now</button>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                                 {media.map((item) => (
-                                    <div key={item.public_id} className="group relative aspect-square rounded-2xl overflow-hidden bg-white/5 border border-white/10 shadow-xl">
+                                    <div
+                                        key={item.public_id}
+                                        onClick={() => setSelectedItem(item)}
+                                        className="group relative aspect-square rounded-2xl overflow-hidden bg-white/5 border border-white/10 shadow-xl cursor-pointer"
+                                    >
                                         {item.type === 'video' ? (
                                             <div className="w-full h-full flex items-center justify-center relative">
                                                 <video
                                                     src={item.secure_url}
                                                     className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity"
                                                 />
-                                                <FaPlayCircle className="absolute inset-0 m-auto text-white/80 text-3xl group-hover:scale-110 transition-transform" />
+                                                <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors" />
+                                                <FaPlayCircle className="absolute inset-0 m-auto text-white/80 text-4xl drop-shadow-lg group-hover:scale-125 transition-transform" />
                                             </div>
                                         ) : (
                                             <img
                                                 src={item.secure_url}
                                                 alt="vault content"
-                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
+                                                loading="lazy"
                                             />
                                         )}
 
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
-                                            <button
-                                                onClick={() => handleDelete(item.public_id, item.type)}
-                                                className="self-end w-8 h-8 bg-red-500/80 hover:bg-red-500 text-white rounded-lg flex items-center justify-center transition-colors"
-                                            >
-                                                <FaTrash size={12} />
-                                            </button>
+                                        <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex justify-between items-center">
+                                            <div className="flex space-x-2">
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); handleSend(item); }}
+                                                    className="w-8 h-8 bg-green-500/80 hover:bg-green-500 text-white rounded-lg flex items-center justify-center transition-colors"
+                                                    title="Send to Chat"
+                                                >
+                                                    <FaPaperPlane size={12} />
+                                                </button>
+                                                <button
+                                                    onClick={(e) => handleDelete(item.public_id, item.type, e)}
+                                                    className="w-8 h-8 bg-red-500/80 hover:bg-red-500 text-white rounded-lg flex items-center justify-center transition-colors"
+                                                    title="Delete"
+                                                >
+                                                    <FaTrash size={12} />
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
                             </div>
                         )}
+                    </div>
+                </div>
+            )}
+
+            {/* FULL SCREEN PREVIEW MODAL */}
+            {selectedItem && (
+                <div className="fixed inset-0 z-[200] flex flex-col bg-black/98 animate-fade-in touch-none">
+                    <div className="flex items-center justify-between p-4 bg-black/50 backdrop-blur-md">
+                        <button onClick={() => setSelectedItem(null)} className="text-white/60 hover:text-white p-2">
+                            <FaTimes size={20} />
+                        </button>
+                        <div className="flex space-x-5">
+                            <button
+                                onClick={() => handleSend(selectedItem)}
+                                className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 rounded-xl text-white font-bold text-sm"
+                            >
+                                <FaPaperPlane size={14} />
+                                <span>Send to Chat</span>
+                            </button>
+                            <button
+                                onClick={(e) => handleDelete(selectedItem.public_id, selectedItem.type, e)}
+                                className="text-red-400 hover:text-red-500"
+                            >
+                                <FaTrash size={18} />
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="flex-1 flex items-center justify-center p-2 overflow-hidden">
+                        {selectedItem.type === 'video' ? (
+                            <video
+                                src={selectedItem.secure_url}
+                                controls
+                                autoPlay
+                                className="max-w-full max-h-full rounded-lg shadow-2xl"
+                            />
+                        ) : (
+                            <img
+                                src={selectedItem.secure_url}
+                                alt="preview"
+                                className="max-w-full max-h-full object-contain rounded-lg shadow-2xl shadow-indigo-500/10"
+                            />
+                        )}
+                    </div>
+
+                    <div className="p-4 text-center">
+                        <a
+                            href={selectedItem.secure_url}
+                            download
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-white/40 hover:text-white text-xs font-bold uppercase tracking-widest flex items-center justify-center space-x-2"
+                        >
+                            <FaDownload />
+                            <span>Download to Device</span>
+                        </a>
                     </div>
                 </div>
             )}

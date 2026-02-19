@@ -127,6 +127,35 @@ const DashboardPage = () => {
         setSelectedChat(null);
     };
 
+    const handleSendVaultMedia = async (url, type) => {
+        if (!selectedChat || !user) return;
+        try {
+            const config = {
+                headers: {
+                    "Content-type": "application/json",
+                    Authorization: `Bearer ${user.token}`,
+                },
+            };
+            const content = type === 'video' ? `[VIDEO] ${url}` : `[IMAGE] ${url}`;
+            const { data } = await axios.post(`${API_BASE_URL}/api/chat`, {
+                content,
+                chatId: selectedChat._id,
+            }, config);
+
+            if (socket) {
+                socket.emit("new message", {
+                    chat: { users: [user, selectedChat] },
+                    sender: user,
+                    ...data
+                });
+            }
+            setMessages((prev) => [...prev, data]);
+            toast.success("Media sent to chat!");
+        } catch (error) {
+            toast.error("Failed to send media");
+        }
+    };
+
     return (
         /*
          * app-height = 100dvh (dynamic viewport height).
@@ -199,7 +228,11 @@ const DashboardPage = () => {
             )}
 
             {/* Secret Vault Overlay */}
-            <Vault isOpen={isVaultOpen} onClose={() => setIsVaultOpen(false)} />
+            <Vault
+                isOpen={isVaultOpen}
+                onClose={() => setIsVaultOpen(false)}
+                onSendToChat={handleSendVaultMedia}
+            />
         </div>
     );
 };

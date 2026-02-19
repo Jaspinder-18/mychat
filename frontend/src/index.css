@@ -206,16 +206,37 @@ button,
     background-color: transparent;
   }
 
-  50% {
-    background-color: rgba(99, 102, 241, 0.3);
+  30% {
+    background-color: rgba(251, 191, 36, 0.4);
   }
 
+  /* Gold highlight for visibility */
   100% {
     background-color: transparent;
   }
 }
 
 .highlight-message {
-  animation: highlight-msg 2s ease-in-out;
+  animation: highlight-msg 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
   border-radius: 12px;
+}
+
+/* ─── Robust Mobile Header ─────────────────────────────────────── */
+.header-container {
+  position: -webkit-sticky;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  width: 100%;
+}
+
+/* Glass effect for reply blocks */
+.reply-quote-amber {
+  background: rgba(245, 158, 11, 0.1) !important;
+  border-left-color: #f59e0b !important;
+}
+
+.reply-quote-indigo {
+  background: rgba(99, 102, 241, 0.1) !important;
+  border-left-color: #6366f1 !important;
 }
