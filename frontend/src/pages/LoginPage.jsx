@@ -4,56 +4,15 @@ import { toast } from 'react-toastify';
 import axios from 'axios';
 import { useChatState } from '../context/ChatProvider';
 import ThemeToggle from '../components/ThemeToggle';
-import { FaCloudDownloadAlt, FaSyncAlt } from 'react-icons/fa';
 import { API_BASE_URL } from '../config';
-
-const CURRENT_VERSION = "1.0.0"; // Local version of this build
 
 const LoginPage = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
-    const [updateAvailable, setUpdateAvailable] = useState(false);
-    const [downloadUrl, setDownloadUrl] = useState('');
-    const [checkingUpdate, setCheckingUpdate] = useState(false);
     const navigate = useNavigate();
     const { setUser } = useChatState();
-
-    React.useEffect(() => {
-        checkUpdate();
-    }, []);
-
-    const checkUpdate = async () => {
-        try {
-            setCheckingUpdate(true);
-            const { data } = await axios.get(`${API_BASE_URL}/api/app/version`);
-            if (data.version !== CURRENT_VERSION) {
-                setUpdateAvailable(true);
-                setDownloadUrl(data.downloadUrl);
-            }
-        } catch (error) {
-            console.log("Update check failed", error);
-        } finally {
-            setCheckingUpdate(false);
-        }
-    };
-
-    const handleUpdate = () => {
-        if (downloadUrl) {
-            // Force download by creating an anchor element
-            const link = document.createElement('a');
-            link.href = downloadUrl;
-            link.setAttribute('download', 'SimpleConnect_Update.apk');
-            link.setAttribute('target', '_blank');
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            toast.success("Download started. Please install it once finished.");
-        } else {
-            toast.info("No download link found. Please contact support.");
-        }
-    };
 
     const submitHandler = async (e) => {
         e.preventDefault();
@@ -84,33 +43,13 @@ const LoginPage = () => {
                 <ThemeToggle />
             </div>
 
-            {/* Version Badge top-left */}
-            <div className="absolute top-4 left-4 z-10 hidden sm:block">
-                <span className="px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-[10px] font-bold text-white/50 tracking-widest border border-white/10 uppercase">
-                    Build v{CURRENT_VERSION}
-                </span>
-            </div>
+
 
             {/* Centered card */}
             <div className="flex-1 flex items-center justify-center px-5 py-12">
                 <div className="w-full max-w-sm">
                     {/* Logo / branding */}
                     <div className="text-center mb-8 relative">
-
-                        {/* UPDATE BUTTON - Centered ABOVE the Title */}
-                        {updateAvailable && (
-                            <div className="flex justify-center mb-6">
-                                <button
-                                    onClick={handleUpdate}
-                                    className="flex items-center space-x-2 px-6 py-3 bg-yellow-400 hover:bg-yellow-500 
-                                               text-gray-900 rounded-2xl text-[11px] font-black shadow-2xl 
-                                               animate-bounce-slow transition-all transform active:scale-95 border-2 border-white/20"
-                                >
-                                    <FaCloudDownloadAlt size={18} className="animate-pulse" />
-                                    <span>TAP TO INSTALL NEW UPDATE</span>
-                                </button>
-                            </div>
-                        )}
 
                         <div className="w-16 h-16 bg-white/20 backdrop-blur rounded-2xl
                                         flex items-center justify-center mx-auto mb-4 shadow-lg">
