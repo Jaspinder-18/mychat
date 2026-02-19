@@ -95,7 +95,23 @@ const LoginPage = () => {
             <div className="flex-1 flex items-center justify-center px-5 py-12">
                 <div className="w-full max-w-sm">
                     {/* Logo / branding */}
-                    <div className="text-center mb-8">
+                    <div className="text-center mb-8 relative">
+
+                        {/* UPDATE BUTTON - Centered ABOVE the Title */}
+                        {updateAvailable && (
+                            <div className="flex justify-center mb-6">
+                                <button
+                                    onClick={handleUpdate}
+                                    className="flex items-center space-x-2 px-6 py-3 bg-yellow-400 hover:bg-yellow-500 
+                                               text-gray-900 rounded-2xl text-[11px] font-black shadow-2xl 
+                                               animate-bounce-slow transition-all transform active:scale-95 border-2 border-white/20"
+                                >
+                                    <FaCloudDownloadAlt size={18} className="animate-pulse" />
+                                    <span>TAP TO INSTALL NEW UPDATE</span>
+                                </button>
+                            </div>
+                        )}
+
                         <div className="w-16 h-16 bg-white/20 backdrop-blur rounded-2xl
                                         flex items-center justify-center mx-auto mb-4 shadow-lg">
                             <svg className="w-9 h-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -110,21 +126,6 @@ const LoginPage = () => {
                     {/* Card */}
                     <div className="relative bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl
                                     rounded-3xl shadow-2xl p-6 space-y-4">
-
-                        {/* UPDATE BUTTON - Centered on top of the card */}
-                        {updateAvailable && (
-                            <div className="absolute -top-12 left-0 right-0 flex justify-center">
-                                <button
-                                    onClick={handleUpdate}
-                                    className="flex items-center space-x-2 px-6 py-3 bg-yellow-400 hover:bg-yellow-500 
-                                               text-gray-900 rounded-2xl text-[11px] font-black shadow-2xl 
-                                               animate-bounce-slow transition-all transform active:scale-95 border-2 border-white/20"
-                                >
-                                    <FaCloudDownloadAlt size={18} className="animate-pulse" />
-                                    <span>NEW UPDATE AVAILABLE — TAP TO DOWNLOAD</span>
-                                </button>
-                            </div>
-                        )}
 
                         <form onSubmit={submitHandler} className="space-y-4">
                             {/* Email */}
