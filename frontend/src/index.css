@@ -201,6 +201,35 @@ button,
   background: rgba(255, 255, 255, 0.3);
 }
 
+/* ── Mobile Viewport & Safe Area Fixes ── */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Add padding to account for status bar and camera cutouts */
+.safe-top {
+  padding-top: calc(var(--safe-top) + 4px) !important;
+}
+
+.safe-bottom {
+  padding-bottom: calc(var(--safe-bottom) + 8px) !important;
+}
+
+/* Prevent layout jumping when keyboard opens on mobile */
+.app-height {
+  height: 100svh;
+  height: 100dvh;
+}
+
+.header-container {
+  position: -webkit-sticky;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  width: 100%;
+}
+
 @keyframes highlight-msg {
   0% {
     background-color: transparent;
@@ -210,7 +239,6 @@ button,
     background-color: rgba(251, 191, 36, 0.4);
   }
 
-  /* Gold highlight for visibility */
   100% {
     background-color: transparent;
   }
@@ -221,16 +249,6 @@ button,
   border-radius: 12px;
 }
 
-/* ─── Robust Mobile Header ─────────────────────────────────────── */
-.header-container {
-  position: -webkit-sticky;
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  width: 100%;
-}
-
-/* Glass effect for reply blocks */
 .reply-quote-amber {
   background: rgba(245, 158, 11, 0.1) !important;
   border-left-color: #f59e0b !important;
@@ -239,4 +257,19 @@ button,
 .reply-quote-indigo {
   background: rgba(99, 102, 241, 0.1) !important;
   border-left-color: #6366f1 !important;
+}
+
+/* Chat bubble image sizing */
+.chat-image-preview {
+  max-width: 260px;
+  max-height: 380px;
+  object-fit: cover;
+  cursor: pointer;
+  border-radius: 16px;
+  border: 4px solid rgba(255, 255, 255, 0.1);
+  transition: transform 0.2s;
+}
+
+.chat-image-preview:active {
+  transform: scale(0.98);
 }

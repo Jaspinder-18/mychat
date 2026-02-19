@@ -13,6 +13,7 @@ router.route('/')
 
 router.post('/upload', protect, upload.single('file'), uploadMedia);
 
-router.delete('/:publicId', protect, deleteVaultMedia);
+// Use POST for deletion to easily handle public_ids with slashes/folders
+router.post('/delete', protect, deleteVaultMedia);
 
 module.exports = router;

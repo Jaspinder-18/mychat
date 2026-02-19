@@ -84,7 +84,7 @@ const Vault = ({ isOpen, onClose, onSendToChat }) => {
         if (!window.confirm("Are you sure you want to delete this?")) return;
         try {
             const config = { headers: { Authorization: `Bearer ${user.token}` } };
-            await axios.delete(`${API_BASE_URL}/api/vault/${publicId}?type=${type}`, config);
+            await axios.post(`${API_BASE_URL}/api/vault/delete`, { publicId, type }, config);
             toast.success("Item deleted");
             setMedia(media.filter(m => m.public_id !== publicId));
             if (selectedItem?.public_id === publicId) setSelectedItem(null);

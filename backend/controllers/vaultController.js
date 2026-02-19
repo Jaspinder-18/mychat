@@ -63,8 +63,12 @@ const getVaultMedia = asyncHandler(async (req, res) => {
 // @route   DELETE /api/vault/:publicId
 // @access  Private
 const deleteVaultMedia = asyncHandler(async (req, res) => {
-    const { publicId } = req.params;
-    const { type } = req.query; // image or video
+    const { publicId, type } = req.body;
+
+    if (!publicId) {
+        res.status(400);
+        throw new Error("Public ID is required");
+    }
 
     try {
         const result = await cloudinary.uploader.destroy(publicId, { resource_type: type || 'image' });

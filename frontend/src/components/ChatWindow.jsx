@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FaArrowLeft, FaTrash, FaPaperPlane, FaSignOutAlt, FaReply, FaTimes, FaPlay } from 'react-icons/fa';
+import { FaArrowLeft, FaTrash, FaPaperPlane, FaSignOutAlt, FaReply, FaTimes, FaPlay, FaPlayCircle, FaDownload } from 'react-icons/fa';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useChatState } from '../context/ChatProvider';
@@ -23,6 +23,7 @@ const ChatWindow = ({
     const [newMessage, setNewMessage] = useState("");
     const [typing, setTyping] = useState(false);
     const [replyingTo, setReplyingTo] = useState(null);
+    const [previewMedia, setPreviewMedia] = useState(null);
     const messagesEndRef = useRef(null);
     const typingTimerRef = useRef(null);
     const inputRef = useRef(null);
@@ -147,17 +148,31 @@ const ChatWindow = ({
     const renderMessageContent = (text, isMine) => {
         if (text.startsWith('[IMAGE] ')) {
             const url = text.replace('[IMAGE] ', '');
-            return <img src={url} alt="Shared media" className="max-w-full rounded-xl shadow-lg my-2 border-2 border-white/20" />;
+            return (
+                <img
+                    src={url}
+                    alt="Shared media"
+                    className="chat-image-preview my-2"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setPreviewMedia({ url, type: 'image' });
+                    }}
+                />
+            );
         }
         if (text.startsWith('[VIDEO] ')) {
             const url = text.replace('[VIDEO] ', '');
             return (
-                <div className="relative group my-2">
-                    <video src={url} className="max-w-full rounded-xl shadow-lg border-2 border-white/20" preload="metadata" />
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => window.open(url, '_blank')} className="w-12 h-12 bg-white/30 backdrop-blur rounded-full flex items-center justify-center">
-                            <FaPlay className="text-white ml-1" />
-                        </button>
+                <div
+                    className="relative group my-2 cursor-pointer"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setPreviewMedia({ url, type: 'video' });
+                    }}
+                >
+                    <video src={url} className="chat-image-preview" preload="metadata" />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/10 rounded-xl">
+                        <FaPlayCircle size={40} className="text-white opacity-80" />
                     </div>
                 </div>
             );
@@ -194,7 +209,7 @@ const ChatWindow = ({
     }
 
     return (
-        <div className="flex flex-col h-full bg-gray-50 dark:bg-[#0b0e14] relative overflow-hidden">
+        <div className="flex flex-col app-height bg-gray-50 dark:bg-[#0b0e14] relative overflow-hidden">
             {/* ── Fixed Header ── */}
             <div className="header-container bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border-b border-gray-100 dark:border-gray-700 shadow-sm safe-top">
                 <div className="flex items-center justify-between px-3 py-3">
@@ -378,6 +393,52 @@ const ChatWindow = ({
                     </div>
                 </div>
             </div>
+
+            {/* ── Media Preview Modal ── */}
+            {previewMedia && (
+                <div
+                    className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex flex-col animate-fade-in"
+                    onClick={() => setPreviewMedia(null)}
+                >
+                    <div className="flex justify-between items-center p-4">
+                        <button
+                            onClick={() => setPreviewMedia(null)}
+                            className="p-2 text-white/70 hover:text-white"
+                        >
+                            <FaTimes size={22} />
+                        </button>
+                        <a
+                            href={previewMedia.url}
+                            download
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center space-x-2 px-4 py-2 bg-white/10 text-white rounded-xl text-xs font-bold uppercase tracking-widest"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <FaDownload />
+                            <span>Download</span>
+                        </a>
+                    </div>
+                    <div className="flex-1 flex items-center justify-center p-4 overflow-hidden">
+                        {previewMedia.type === 'image' ? (
+                            <img
+                                src={previewMedia.url}
+                                alt="Shared preview"
+                                className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+                                onClick={(e) => e.stopPropagation()}
+                            />
+                        ) : (
+                            <video
+                                src={previewMedia.url}
+                                controls
+                                autoPlay
+                                className="max-w-full max-h-full rounded-lg"
+                                onClick={(e) => e.stopPropagation()}
+                            />
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
