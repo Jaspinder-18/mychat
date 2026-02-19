@@ -5,7 +5,6 @@ const connectDB = require('./config/db');
 const userRoutes = require('./routes/userRoutes');
 const chatRoutes = require('./routes/chatRoutes');
 const vaultRoutes = require('./routes/vaultRoutes');
-const appRoutes = require('./routes/appRoutes');
 const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 
 dotenv.config();
@@ -26,7 +25,6 @@ app.use((req, res, next) => {
 app.use('/api/users', userRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/vault', vaultRoutes);
-app.use('/api/app', appRoutes);
 
 app.get('/', (req, res) => {
     res.send('API is running....');
