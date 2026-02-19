@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FaTrash, FaPlus, FaLock, FaTimes, FaCloudUploadAlt, FaPlayCircle, FaPaperPlane, FaDownload } from 'react-icons/fa';
+import { FaTrash, FaPlus, FaLock, FaTimes, FaCloudUploadAlt, FaPlayCircle, FaPaperPlane } from 'react-icons/fa';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useChatState } from '../context/ChatProvider';
@@ -278,18 +278,7 @@ const Vault = ({ isOpen, onClose, onSendToChat }) => {
                         )}
                     </div>
 
-                    <div className="p-4 text-center">
-                        <a
-                            href={selectedItem.secure_url}
-                            download
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-white/40 hover:text-white text-xs font-bold uppercase tracking-widest flex items-center justify-center space-x-2"
-                        >
-                            <FaDownload />
-                            <span>Download to Device</span>
-                        </a>
-                    </div>
+
                 </div>
             )}
         </div>

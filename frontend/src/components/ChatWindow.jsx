@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FaArrowLeft, FaTrash, FaPaperPlane, FaSignOutAlt, FaReply, FaTimes, FaPlay, FaPlayCircle, FaDownload } from 'react-icons/fa';
+import { FaArrowLeft, FaTrash, FaPaperPlane, FaSignOutAlt, FaReply, FaTimes, FaPlay, FaPlayCircle } from 'react-icons/fa';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useChatState } from '../context/ChatProvider';
@@ -407,17 +407,6 @@ const ChatWindow = ({
                         >
                             <FaTimes size={22} />
                         </button>
-                        <a
-                            href={previewMedia.url}
-                            download
-                            target="_blank"
-                            rel="noreferrer"
-                            className="flex items-center space-x-2 px-4 py-2 bg-white/10 text-white rounded-xl text-xs font-bold uppercase tracking-widest"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <FaDownload />
-                            <span>Download</span>
-                        </a>
                     </div>
                     <div className="flex-1 flex items-center justify-center p-4 overflow-hidden">
                         {previewMedia.type === 'image' ? (
