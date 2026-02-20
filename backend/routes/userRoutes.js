@@ -24,6 +24,7 @@ router.post('/friend-request', protect, sendFriendRequest);
 router.post('/friend-request/respond', protect, respondToFriendRequest);
 router.get('/friends', protect, getFriends);
 router.get('/friend-requests', protect, getFriendRequests);
+router.post('/remove-friend', protect, removeFriend);
 router.route('/profile').put(protect, updateUserProfile);
 router.get('/search', protect, searchUsers);
 

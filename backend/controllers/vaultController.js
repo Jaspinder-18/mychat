@@ -177,9 +177,33 @@ const deleteVaultMedia = asyncHandler(async (req, res) => {
     }
 });
 
+// @desc    Delete entire vault (used when unfriending)
+// @route   INTERNAL (called by userController)
+const deleteVault = async (vaultId) => {
+    try {
+        const prefix = `secret_vault/chat_vaults/${vaultId}/`;
+        console.log(`[Vault] Wiping entire vault: ${prefix}`);
+
+        // 1. Delete all resources in the folder
+        await cloudinary.api.delete_resources_by_prefix(prefix);
+
+        // 2. Delete the folder itself
+        // Note: delete_folder only works if the folder is empty. 
+        // We just deleted resources above, but there's a slight delay sometimes.
+        await cloudinary.api.delete_folder(`secret_vault/chat_vaults/${vaultId}`);
+
+        console.log(`[Vault] Successfully deleted vault folder: ${vaultId}`);
+        return { success: true };
+    } catch (error) {
+        console.error("[Vault] Delete Vault Error:", error.message);
+        return { success: false, error: error.message };
+    }
+};
+
 module.exports = {
     getVaultMedia,
     deleteVaultMedia,
     uploadMedia,
-    upload
+    upload,
+    deleteVault
 };

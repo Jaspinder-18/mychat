@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FaUserPlus, FaComments, FaBell, FaSearch, FaSignOutAlt } from 'react-icons/fa';
+import { FaUserPlus, FaComments, FaBell, FaSearch, FaSignOutAlt, FaUserSlash } from 'react-icons/fa';
 import ThemeToggle from './ThemeToggle';
 import { useChatState } from '../context/ChatProvider';
 import axios from 'axios';
@@ -64,6 +64,33 @@ const Sidebar = ({
             toast.success("Friend request sent!");
         } catch (error) {
             toast.error(error.response?.data?.message || "Error sending request");
+        }
+    };
+
+    const handleRemoveFriend = async (friendId, friendName, e) => {
+        e?.stopPropagation();
+        const confirmResult = window.confirm(`Are you sure you want to remove ${friendName}? \n\n⚠️ WARNING: This will PERMANENTLY delete all shared photos and videos in your private vault.`);
+
+        if (!confirmResult) return;
+
+        try {
+            const config = {
+                headers: {
+                    Authorization: `Bearer ${user.token}`,
+                    "Content-type": "application/json"
+                }
+            };
+            await axios.post(`${API_BASE_URL}/api/users/remove-friend`, { friendId }, config);
+            toast.success("Friend removed and vault wiped.");
+
+            // Clear current chat if it's the one we removed
+            if (selectedChat?._id === friendId) {
+                setSelectedChat(null);
+            }
+
+            fetchFriends();
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Error removing friend");
         }
     };
 
@@ -271,12 +298,23 @@ const Sidebar = ({
                                                            text-sm truncate">
                                                 {friend.name}
                                             </h3>
-                                            {isUserOnline(friend._id) && (
-                                                <span className="text-[9px] text-green-500 font-bold
-                                                                 uppercase tracking-widest flex-shrink-0 ml-2">
-                                                    Online
-                                                </span>
-                                            )}
+                                            <div className="flex items-center space-x-2 flex-shrink-0">
+                                                {isUserOnline(friend._id) && (
+                                                    <span className="text-[9px] text-green-500 font-bold
+                                                                     uppercase tracking-widest">
+                                                        Online
+                                                    </span>
+                                                )}
+                                                <button
+                                                    onClick={(e) => handleRemoveFriend(friend._id, friend.name, e)}
+                                                    className="w-8 h-8 flex items-center justify-center text-gray-300
+                                                               hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20
+                                                               rounded-lg transition-all active:scale-90"
+                                                    title="Remove Friend"
+                                                >
+                                                    <FaUserSlash size={14} />
+                                                </button>
+                                            </div>
                                         </div>
                                         <p className="text-xs text-gray-400 dark:text-gray-500 truncate mt-0.5">
                                             Tap to chat

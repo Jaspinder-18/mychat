@@ -274,6 +274,39 @@ const getFriendRequests = asyncHandler(async (req, res) => {
 });
 
 
+// @desc    Remove Friend & Delete Vault
+// @route   POST /api/users/remove-friend
+// @access  Private
+const removeFriend = asyncHandler(async (req, res) => {
+    const { friendId } = req.body;
+    const { deleteVault } = require('./vaultController');
+
+    const user = await User.findById(req.user._id);
+    const friend = await User.findById(friendId);
+
+    if (!friend) {
+        res.status(404);
+        throw new Error('Friend not found');
+    }
+
+    // 1. Remove from mutual friends lists
+    user.friends = user.friends.filter(id => id.toString() !== friendId);
+    friend.friends = friend.friends.filter(id => id.toString() !== user._id.toString());
+
+    await user.save();
+    await friend.save();
+
+    // 2. Identify and Wipe Cloudinary Vault
+    // The vaultId logic must match what's in vaultController.js
+    const vaultId = [user._id.toString(), friend._id.toString()].sort().join('_');
+    const wipeResult = await deleteVault(vaultId);
+
+    res.json({
+        message: 'Friend removed and shared vault wiped',
+        vaultCleanup: wipeResult.success ? 'Success' : 'Failed'
+    });
+});
+
 module.exports = {
     registerUser,
     authUser,
@@ -284,5 +317,6 @@ module.exports = {
     respondToFriendRequest,
     getFriends,
     getFriendRequests,
-    updateUserProfile
+    updateUserProfile,
+    removeFriend
 };
