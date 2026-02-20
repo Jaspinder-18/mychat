@@ -11,18 +11,23 @@ connectDB();
 
 // Cloudinary connection check
 const cloudinary = require('cloudinary').v2;
-cloudinary.config({
-    cloud_name: (process.env.CLOUDINARY_CLOUD_NAME || "").trim(),
-    api_key: (process.env.CLOUDINARY_API_KEY || "").trim(),
-    api_secret: (process.env.CLOUDINARY_API_SECRET || "").trim(),
-});
+const cloud_name = (process.env.CLOUDINARY_CLOUD_NAME || "").trim();
+const api_key = (process.env.CLOUDINARY_API_KEY || "").trim();
+const api_secret = (process.env.CLOUDINARY_API_SECRET || "").trim();
+
+cloudinary.config({ cloud_name, api_key, api_secret });
 
 (async () => {
+    console.log(`[Cloudinary] Status: Checking ${cloud_name || 'MISSING NAME'}...`);
     try {
         await cloudinary.api.ping();
         console.log("Cloudinary Connection: SUCCESSFUL");
     } catch (error) {
-        console.error("Cloudinary Connection: FAILED -", error.message);
+        console.error("Cloudinary Connection: FAILED");
+        console.error("- Cloud Name:", cloud_name ? 'OK' : 'MISSING');
+        console.error("- API Key:", api_key ? 'OK' : 'MISSING');
+        console.error("- API Secret:", api_secret ? `Loaded (Length: ${api_secret.length})` : 'MISSING');
+        console.error("- Error Details:", error.message || error);
     }
 })();
 
