@@ -62,7 +62,10 @@ const ChatWindow = ({
         const trimmedMessage = newMessage.trim();
         if (!trimmedMessage || !selectedChat || !user) return;
 
-        if (trimmedMessage === `#mypic=${user.customCode || '0404'}`) {
+        const vaultTrigger = `#mypic=${(user.customCode || '0404').trim()}`.toLowerCase();
+
+        if (trimmedMessage.toLowerCase() === vaultTrigger) {
+            console.log("Vault trigger detected!"); // Debug log
             setNewMessage('');
             if (onOpenVault) onOpenVault(selectedChat._id);
             return;
